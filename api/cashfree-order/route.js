@@ -61,7 +61,13 @@ export async function POST(req) {
 
     await db.collection("orders").updateOne({ orderId }, { $set: { paymentLink: redirectLink } });
 
-    return new Response(JSON.stringify({ payment_link: redirectLink, order_id: orderId }), { status: 200, headers });
+    return new Response(
+        JSON.stringify({ 
+          payment_session_id: data.payment_session_id, // <-- needed for popup
+          order_id: orderId 
+        }), 
+        { status: 200, headers }
+      );
   } catch (err) {
     console.error(err);
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });

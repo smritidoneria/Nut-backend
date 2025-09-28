@@ -19,6 +19,13 @@ export async function OPTIONS() {
     },
   });
 }
+
+export async function GET() {
+  return new Response("Cashfree Order API is live", {
+    status: 200,
+    headers: { "Access-Control-Allow-Origin": "*" },
+  });
+}
 // Create Order
 export async function POST(req) {
   try {

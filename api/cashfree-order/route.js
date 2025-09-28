@@ -1,21 +1,26 @@
 import crypto from "crypto";
 import { connectToDB } from "../../lib/db";
 
-const headers = {
-  "Access-Control-Allow-Origin": "*", // allow all origins, or specify your frontend URL
+// Helper function to add CORS headers
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*", // or your frontend URL in prod
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
+// OPTIONS handler for preflight requests
 export async function OPTIONS() {
-  // Preflight request
-  return new Response(null, { status: 200, headers });
+  return new Response(null, {
+    status: 204, // 204 No Content is good for preflight
+    headers: corsHeaders,
+  });
 }
 
-
 export async function POST(req) {
-
   try {
+    // Always respond with CORS headers
+    const headers = corsHeaders;
+
     const body = await req.json();
     const { name, phone, email, address, amount, orderItems } = body;
 
@@ -42,9 +47,16 @@ export async function POST(req) {
       order_id: orderId,
       order_amount: amount,
       order_currency: "INR",
-      customer_details: { customer_id: `${phone}_${Date.now()}`, customer_name: name, customer_email: email, customer_phone: phone },
+      customer_details: { 
+        customer_id: `${phone}_${Date.now()}`, 
+        customer_name: name, 
+        customer_email: email, 
+        customer_phone: phone 
+      },
       order_note: "Order of Nuts",
-      order_meta: { return_url: `https://nutbasket.shop/payment-success?order_id=${orderId}` },
+      order_meta: { 
+        return_url: `https://nutbasket.shop/payment-success?order_id=${orderId}` 
+      },
     };
 
     const cfRes = await fetch(`${baseUrl}/pg/orders`, {
@@ -60,16 +72,14 @@ export async function POST(req) {
 
     const data = await cfRes.json();
 
-    const redirectLink = data.payment_link || `${env === "PROD" ? "https://payments.cashfree.com/pg/view/pay" : "https://payments-test.cashfree.com/pg/view/pay"}/${data.payment_session_id}`;
-
-    await db.collection("orders").updateOne({ orderId }, { $set: { paymentLink: redirectLink } });
+    await db.collection("orders").updateOne({ orderId }, { $set: { paymentLink: data.payment_link } });
 
     return new Response(
       JSON.stringify({ payment_session_id: data.payment_session_id, order_id: orderId }),
-      { status: 200, headers } // must include headers here too
+      { status: 200, headers }
     );
   } catch (err) {
     console.error(err);
-    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });
+    return new Response(JSON.stringify({ error: err.message }), { status: 500, headers: corsHeaders });
   }
 }

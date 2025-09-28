@@ -11,7 +11,7 @@ const corsHeaders = {
 // OPTIONS handler for preflight requests
 export async function OPTIONS() {
   return new Response(null, {
-    status: 204, // 204 No Content is good for preflight
+    status: 200, // 204 No Content is good for preflight
     headers: corsHeaders,
   });
 }

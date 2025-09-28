@@ -1,20 +1,24 @@
+// pages/api/cashfree-order.js
 import crypto from "crypto";
-import { connectToDB } from "../../lib/db"; // adjust path if needed
+import { connectToDB } from "../../lib/db"; // adjust if needed
 
 export default async function handler(req, res) {
-  // Set CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "*"); // change to frontend domain in prod
+  // --- CORS headers ---
+  res.setHeader("Access-Control-Allow-Origin", "*"); // allow all origins for testing
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
+  // --- Handle preflight ---
   if (req.method === "OPTIONS") {
     return res.status(200).end(); // Preflight OK
   }
 
+  // --- GET endpoint (test) ---
   if (req.method === "GET") {
     return res.status(200).json({ message: "Cashfree Order API is live" });
   }
 
+  // --- POST endpoint ---
   if (req.method === "POST") {
     try {
       const { name, phone, email, address, amount, orderItems } = req.body;
@@ -65,6 +69,7 @@ export default async function handler(req, res) {
       });
 
       const data = await cfRes.json();
+
       await db.collection("orders").updateOne(
         { orderId },
         { $set: { paymentLink: data.payment_link } }
@@ -73,11 +78,15 @@ export default async function handler(req, res) {
       return res.status(200).json({
         payment_session_id: data.payment_session_id,
         order_id: orderId,
+        paymentLink: data.payment_link,
       });
+
     } catch (err) {
+      console.error(err);
       return res.status(500).json({ error: err.message });
     }
   }
 
+  // --- Fallback ---
   return res.status(405).json({ error: "Method not allowed" });
 }

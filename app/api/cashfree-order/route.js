@@ -96,7 +96,4 @@ export async function POST(req) {
   }
 }
 
-// (Optional) GET handler
-export async function GET() {
-  return new Response("Create Order API", { status: 200, headers: corsHeaders });
-}
+

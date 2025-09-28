@@ -1,17 +1,15 @@
 import crypto from "crypto";
 import { connectToDB } from "../../lib/db";
 
-const headers = {
+
+
+
+export async function POST(req) {
+  const headers = {
   "Access-Control-Allow-Origin": "*", // replace with frontend URL in prod
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
-
-export async function OPTIONS() {
-  return new Response(null, { status: 200, headers });
-}
-
-export async function POST(req) {
   try {
     const body = await req.json();
     const { name, phone, email, address, amount, orderItems } = body;

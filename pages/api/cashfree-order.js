@@ -1,15 +1,19 @@
+// pages/api/cashfree-order.js
+
 import crypto from "crypto";
 import { connectDB } from "../../lib/db";
-import Order from "../../lib/models/Order";
+import Order from "../../models/order";
 
 export default async function handler(req, res) {
   // CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin", "*"); // or your frontend URL in prod
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
+  // Handle preflight
   if (req.method === "OPTIONS") return res.status(200).end();
 
+  // Simple GET check
   if (req.method === "GET") {
     return res.status(200).json({ message: "Cashfree Order API is live" });
   }
@@ -21,6 +25,7 @@ export default async function handler(req, res) {
       const { name, phone, email, address, amount, orderItems } = req.body;
       const orderId = crypto.randomUUID();
 
+      // Create Mongoose order
       const newOrder = await Order.create({
         orderId,
         user: { name, phone, email, address },
@@ -28,6 +33,7 @@ export default async function handler(req, res) {
         amount,
       });
 
+      // Cashfree integration
       const appId = process.env.CASHFREE_APP_ID;
       const secretKey = process.env.CASHFREE_SECRET_KEY;
       const env = (process.env.CASHFREE_ENV || "TEST").toUpperCase();
@@ -63,7 +69,7 @@ export default async function handler(req, res) {
 
       const data = await cfRes.json();
 
-      // Save payment link in order
+      // Save payment link
       newOrder.paymentLink = data.payment_link;
       await newOrder.save();
 

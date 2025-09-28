@@ -1,15 +1,20 @@
 import crypto from "crypto";
 import { connectToDB } from "../../lib/db";
 
-
-
-
-export async function POST(req) {
-  const headers = {
-  "Access-Control-Allow-Origin": "*", // replace with frontend URL in prod
+const headers = {
+  "Access-Control-Allow-Origin": "*", // allow all origins, or specify your frontend URL
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
+
+export async function OPTIONS() {
+  // Preflight request
+  return new Response(null, { status: 200, headers });
+}
+
+
+export async function POST(req) {
+
   try {
     const body = await req.json();
     const { name, phone, email, address, amount, orderItems } = body;
@@ -60,12 +65,9 @@ export async function POST(req) {
     await db.collection("orders").updateOne({ orderId }, { $set: { paymentLink: redirectLink } });
 
     return new Response(
-        JSON.stringify({ 
-          payment_session_id: data.payment_session_id, // <-- needed for popup
-          order_id: orderId 
-        }), 
-        { status: 200, headers }
-      );
+      JSON.stringify({ payment_session_id: data.payment_session_id, order_id: orderId }),
+      { status: 200, headers } // must include headers here too
+    );
   } catch (err) {
     console.error(err);
     return new Response(JSON.stringify({ error: err.message }), { status: 500, headers });

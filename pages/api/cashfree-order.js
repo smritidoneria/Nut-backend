@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     try {
       const { name, phone, email, address, amount, orderItems } = req.body;
       const orderId = crypto.randomUUID();
-      const db = await connectDB();
+
 
     
      

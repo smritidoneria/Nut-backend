@@ -15,17 +15,28 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { orderId, paymentStatus } = req.body;
+    const { name, phone, email, address, amount, orderItems, orderId, paymentLink } = req.body;
     console.log("Update Order Request:", req.body);
 
     // Ensure DB is connected
-    await connectDB();
 
-    // Update order via Mongoose model
-    await Order.updateOne(
-      { orderId },
-      { $set: { paymentStatus: "SUCCESS", updatedAt: new Date() } }
-    );
+    const db = await connectDB();
+
+    
+    const newOrder = await Order.create({
+      orderId,
+      user: { name, phone, email, address },
+      cart: orderItems,
+      amount,
+      paymentStatus:"SUCCESS",
+      paymentLink
+    });
+
+ 
+    await newOrder.save();
+
+   
+ 
 
     return res.status(200).json({ success: true });
   } catch (err) {

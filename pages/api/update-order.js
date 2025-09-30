@@ -16,6 +16,7 @@ export default async function handler(req, res) {
 
   try {
     const { orderId, paymentStatus } = req.body;
+    console.log("Update Order Request:", req.body);
 
     // Ensure DB is connected
     await connectDB();

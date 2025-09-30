@@ -35,6 +35,8 @@ export default async function handler(req, res) {
  
     await newOrder.save();
 
+       console.log("Order updated to SUCCESS:", newOrder);
+
    
  
 

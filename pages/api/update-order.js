@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     // Update order via Mongoose model
     await Order.updateOne(
       { orderId },
-      { $set: { paymentStatus, updatedAt: new Date() } }
+      { $set: { paymentStatus: "SUCCESS", updatedAt: new Date() } }
     );
 
     return res.status(200).json({ success: true });

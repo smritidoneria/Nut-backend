@@ -1,44 +1,39 @@
-// pages/api/cashfree-order.js
-
 import crypto from "crypto";
-import { connectDB } from "../../lib/db";
-import Order from "../../models/order";
+import { connectToDB } from "../../lib/db"; // adjust path if needed
 
 export default async function handler(req, res) {
-  // CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "*"); // or your frontend URL in prod
+  // Set CORS headers
+  res.setHeader("Access-Control-Allow-Origin", "*"); // change to frontend domain in prod
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
-  // Handle preflight
-  if (req.method === "OPTIONS") return res.status(200).end();
+  if (req.method === "OPTIONS") {
+    return res.status(200).end(); // Preflight OK
+  }
 
-  // Simple GET check
   if (req.method === "GET") {
     return res.status(200).json({ message: "Cashfree Order API is live" });
   }
 
   if (req.method === "POST") {
     try {
-      await connectDB();
-
       const { name, phone, email, address, amount, orderItems } = req.body;
       const orderId = crypto.randomUUID();
+      const db = await connectToDB();
 
-      // Create Mongoose order
+    
       const newOrder = await Order.create({
         orderId,
         user: { name, phone, email, address },
         cart: orderItems,
         amount,
       });
-
-      // Cashfree integration
       const appId = process.env.CASHFREE_APP_ID;
       const secretKey = process.env.CASHFREE_SECRET_KEY;
       const env = (process.env.CASHFREE_ENV || "TEST").toUpperCase();
-      const baseUrl =
-        env === "PROD" ? "https://api.cashfree.com" : "https://sandbox.cashfree.com";
+      const baseUrl = env === "PROD"
+        ? "https://api.cashfree.com"
+        : "https://sandbox.cashfree.com";
 
       const payload = {
         order_id: orderId,
@@ -68,17 +63,19 @@ export default async function handler(req, res) {
       });
 
       const data = await cfRes.json();
-
-      // Save payment link
-      newOrder.paymentLink = data.payment_link;
-      await newOrder.save();
+      if (!data.payment_session_id) {
+        return res.status(500).json({ error: "Cashfree did not return payment_session_id" });
+      }
+      await db.collection("orders").updateOne(
+        { orderId },
+        { $set: { paymentLink: data.payment_link } }
+      );
 
       return res.status(200).json({
         payment_session_id: data.payment_session_id,
         order_id: orderId,
       });
     } catch (err) {
-      console.error(err);
       return res.status(500).json({ error: err.message });
     }
   }

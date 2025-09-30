@@ -67,10 +67,8 @@ export default async function handler(req, res) {
       if (!data.payment_session_id) {
         return res.status(500).json({ error: "Cashfree did not return payment_session_id" });
       }
-      await db.collection("orders").updateOne(
-        { orderId },
-        { $set: { paymentLink: data.payment_link } }
-      );
+        newOrder.paymentLink = data.payment_link;
+    await newOrder.save();
 
       return res.status(200).json({
         payment_session_id: data.payment_session_id,

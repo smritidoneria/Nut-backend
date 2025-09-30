@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { connectToDB } from "../../lib/db"; // adjust path if needed
+import { connectDB } from "../../lib/db"; // adjust path if needed
 
 export default async function handler(req, res) {
   // Set CORS headers

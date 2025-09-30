@@ -67,25 +67,29 @@ export default async function handler(req, res) {
         payment_session_id: data.payment_session_id,
         order_id: orderId,
       });
-      (async () => {
-        try {
-          const db = await connectDB();
-          const newOrder = await Order.create({
+
+      // Save order asynchronously without touching res
+      connectDB()
+        .then(() =>
+          Order.create({
             orderId,
             user: { name, phone, email, address },
             cart: orderItems,
             amount,
             paymentLink: data.payment_link,
-          });
-          await newOrder.save();
-        } catch (dbErr) {
-          console.error("DB Save Error:", dbErr.message);
-        }
-      })();
-    } catch (err) {
+          })
+            .then(() => console.log("Order saved successfully"))
+            .catch((dbErr) => console.error("DB Save Error:", dbErr.message))
+        )
+        .catch((connErr) => console.error("DB Connection Error:", connErr.message));
 
-      return res.status(500).json({ error: err.message });
+    } catch (err) {
+      console.error("API Error:", err.message);
+      if (!res.headersSent) {
+        return res.status(500).json({ error: err.message });
+      }
     }
+    return;
   }
 
   return res.status(405).json({ error: "Method not allowed" });

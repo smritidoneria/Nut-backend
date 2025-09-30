@@ -20,10 +20,15 @@ export default async function handler(req, res) {
     try {
       const { name, phone, email, address, amount, orderItems } = req.body;
       const orderId = crypto.randomUUID();
-
+      const db = await connectDB();
 
     
-     
+      const newOrder = await Order.create({
+        orderId,
+        user: { name, phone, email, address },
+        cart: orderItems,
+        amount,
+      });
       const appId = process.env.CASHFREE_APP_ID;
       const secretKey = process.env.CASHFREE_SECRET_KEY;
       const env = (process.env.CASHFREE_ENV || "TEST").toUpperCase();
@@ -62,34 +67,17 @@ export default async function handler(req, res) {
       if (!data.payment_session_id) {
         return res.status(500).json({ error: "Cashfree did not return payment_session_id" });
       }
-      
-      res.status(200).json({
+        newOrder.paymentLink = data.payment_link;
+    await newOrder.save();
+
+      return res.status(200).json({
         payment_session_id: data.payment_session_id,
         order_id: orderId,
       });
-
-      // Save order asynchronously without touching res
-      connectDB()
-        .then(() =>
-          Order.create({
-            orderId,
-            user: { name, phone, email, address },
-            cart: orderItems,
-            amount,
-            paymentLink: data.payment_link,
-          })
-            .then(() => console.log("Order saved successfully"))
-            .catch((dbErr) => console.error("DB Save Error:", dbErr.message))
-        )
-        .catch((connErr) => console.error("DB Connection Error:", connErr.message));
-
     } catch (err) {
-      console.error("API Error:", err.message);
-      if (!res.headersSent) {
-        return res.status(500).json({ error: err.message });
-      }
+      console.log(err);
+      return res.status(500).json({ error: err.message });
     }
-    return;
   }
 
   return res.status(405).json({ error: "Method not allowed" });

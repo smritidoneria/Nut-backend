@@ -20,15 +20,7 @@ export default async function handler(req, res) {
     try {
       const { name, phone, email, address, amount, orderItems } = req.body;
       const orderId = crypto.randomUUID();
-      const db = await connectDB();
-
-    
-      const newOrder = await Order.create({
-        orderId,
-        user: { name, phone, email, address },
-        cart: orderItems,
-        amount,
-      });
+ 
       const appId = process.env.CASHFREE_APP_ID;
       const secretKey = process.env.CASHFREE_SECRET_KEY;
       const env = (process.env.CASHFREE_ENV || "TEST").toUpperCase();
@@ -67,10 +59,10 @@ export default async function handler(req, res) {
       if (!data.payment_session_id) {
         return res.status(500).json({ error: "Cashfree did not return payment_session_id" });
       }
-        newOrder.paymentLink = data.payment_link;
-    await newOrder.save();
+        
 
       return res.status(200).json({
+        payment_link: data.payment_link,
         payment_session_id: data.payment_session_id,
         order_id: orderId,
       });

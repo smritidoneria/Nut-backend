@@ -76,6 +76,7 @@ export default async function handler(req, res) {
         order_id: orderId,
       });
     } catch (err) {
+      console.log(err);
       return res.status(500).json({ error: err.message });
     }
   }
